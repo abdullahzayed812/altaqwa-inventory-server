@@ -9,6 +9,10 @@ export class CustomerUseCases {
     return repo.findAll();
   }
 
+  async getCustomerById(id: number): Promise<Customer | null> {
+    return repo.findById(id);
+  }
+
   async addCustomer(data: CreateCustomerDto): Promise<Customer> {
     return repo.create(data);
   }

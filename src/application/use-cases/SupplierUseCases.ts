@@ -66,8 +66,8 @@ export class SupplierUseCases {
     });
   }
 
-  async getLedger(supplierId: number): Promise<SupplierLedger[]> {
-    return purchaseRepo.getLedger(supplierId);
+  async getLedger(supplierId: number, filters: { type?: string; startDate?: string; endDate?: string } = {}): Promise<SupplierLedger[]> {
+    return purchaseRepo.getLedger(supplierId, filters);
   }
 
   async getAllPayments(): Promise<SupplierPayment[]> {

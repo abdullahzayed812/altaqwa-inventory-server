@@ -135,11 +135,27 @@ export class PurchaseRepository {
     );
   }
 
-  async getLedger(supplierId: number, db: Queryable = pool): Promise<SupplierLedger[]> {
-    const [rows] = await db.query<RowDataPacket[]>(
-      'SELECT * FROM supplier_ledger WHERE supplierId = ? ORDER BY createdAt DESC',
-      [supplierId]
-    );
+  async getLedger(
+    supplierId: number,
+    filters: { type?: string; startDate?: string; endDate?: string } = {},
+    db: Queryable = pool
+  ): Promise<SupplierLedger[]> {
+    let query = 'SELECT * FROM supplier_ledger WHERE supplierId = ?';
+    const params: any[] = [supplierId];
+    if (filters.type) {
+      query += ' AND type = ?';
+      params.push(filters.type);
+    }
+    if (filters.startDate) {
+      query += ' AND DATE(createdAt) >= ?';
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      query += ' AND DATE(createdAt) <= ?';
+      params.push(filters.endDate);
+    }
+    query += ' ORDER BY createdAt DESC';
+    const [rows] = await db.query<RowDataPacket[]>(query, params);
     return rows.map(parseLedgerRow);
   }
 

@@ -161,4 +161,28 @@ export class OrderRepository {
     );
     return attachItems(rows.map(parseOrderRow), db);
   }
+
+  async findByCustomerIdFiltered(
+    customerId: number,
+    filters: { startDate?: string; endDate?: string; keyword?: string } = {},
+    db: Queryable = pool
+  ): Promise<Order[]> {
+    let query = `${ORDER_WITH_RELATIONS} WHERE o.customerId = ?`;
+    const params: any[] = [customerId];
+    if (filters.startDate) {
+      query += ' AND DATE(o.createdAt) >= ?';
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      query += ' AND DATE(o.createdAt) <= ?';
+      params.push(filters.endDate);
+    }
+    if (filters.keyword) {
+      query += ' AND (o.orderNumber LIKE ? OR CAST(o.totalAmount AS CHAR) LIKE ?)';
+      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`);
+    }
+    query += ' ORDER BY o.createdAt DESC';
+    const [rows] = await db.query<RowDataPacket[]>(query, params);
+    return attachItems(rows.map(parseOrderRow), db);
+  }
 }

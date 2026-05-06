@@ -21,6 +21,9 @@ const reports = new ReportController();
 // Customers
 router.get('/customers', (req, res) => customers.getAll(req, res));
 router.post('/customers', (req, res) => customers.create(req, res));
+router.get('/customers/:id', (req, res) => customers.getById(req, res));
+router.get('/customers/:id/payments', (req, res) => customers.getPayments(req, res));
+router.get('/customers/:id/orders', (req, res) => customers.getOrders(req, res));
 
 // Products
 router.get('/products', (req, res) => inventory.getAll(req, res));

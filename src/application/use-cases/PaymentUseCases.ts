@@ -11,6 +11,10 @@ export class PaymentUseCases {
     return repo.findAll();
   }
 
+  async getCustomerPayments(customerId: number, filters: { startDate?: string; endDate?: string; keyword?: string } = {}): Promise<Payment[]> {
+    return repo.findByCustomerIdFiltered(customerId, filters);
+  }
+
   async addPayment(data: AddPaymentDto): Promise<Payment> {
     const customer = await customerRepo.findById(data.customerId);
     if (!customer) throw new Error('Customer not found');

@@ -14,6 +14,10 @@ export class OrderUseCases {
     return orderRepo.findAll();
   }
 
+  async getCustomerOrders(customerId: number, filters: { startDate?: string; endDate?: string; keyword?: string } = {}): Promise<Order[]> {
+    return orderRepo.findByCustomerIdFiltered(customerId, filters);
+  }
+
   async createOrder(data: CreateOrderDto): Promise<Order> {
     return withTransaction(async (conn) => {
       const customer = await customerRepo.findById(data.customerId, conn);

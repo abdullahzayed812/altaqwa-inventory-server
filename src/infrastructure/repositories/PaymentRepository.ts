@@ -46,6 +46,30 @@ export class PaymentRepository {
     return rows.map(r => ({ ...parseRow(r), customerId }));
   }
 
+  async findByCustomerIdFiltered(
+    customerId: number,
+    filters: { startDate?: string; endDate?: string; keyword?: string } = {},
+    db: Queryable = pool
+  ): Promise<Payment[]> {
+    let query = 'SELECT * FROM payments WHERE customerId = ?';
+    const params: any[] = [customerId];
+    if (filters.startDate) {
+      query += ' AND DATE(createdAt) >= ?';
+      params.push(filters.startDate);
+    }
+    if (filters.endDate) {
+      query += ' AND DATE(createdAt) <= ?';
+      params.push(filters.endDate);
+    }
+    if (filters.keyword) {
+      query += ' AND (notes LIKE ? OR CAST(amount AS CHAR) LIKE ?)';
+      params.push(`%${filters.keyword}%`, `%${filters.keyword}%`);
+    }
+    query += ' ORDER BY createdAt DESC';
+    const [rows] = await db.query<RowDataPacket[]>(query, params);
+    return rows.map(r => ({ ...parseRow(r), customerId }));
+  }
+
   async create(data: AddPaymentDto, db: Queryable = pool): Promise<Payment> {
     const [result] = await db.query<ResultSetHeader>(
       'INSERT INTO payments (customerId, amount, method, notes) VALUES (?, ?, ?, ?)',

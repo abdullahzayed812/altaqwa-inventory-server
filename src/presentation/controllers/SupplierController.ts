@@ -49,7 +49,9 @@ export class SupplierController {
 
   async getLedger(req: Request, res: Response) {
     try {
-      res.json(await uc.getLedger(Number(req.params.id)));
+      const supplierId = Number(req.params.id);
+      const { type, startDate, endDate } = req.query as { type?: string; startDate?: string; endDate?: string };
+      res.json(await uc.getLedger(supplierId, { type, startDate, endDate }));
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

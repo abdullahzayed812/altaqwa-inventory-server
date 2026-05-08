@@ -65,6 +65,16 @@ export class SupplierController {
     }
   }
 
+  async getPurchaseById(req: Request, res: Response) {
+    try {
+      const purchase = await uc.getPurchaseById(Number(req.params.id));
+      if (!purchase) return res.status(404).json({ error: 'Purchase not found' });
+      res.json(purchase);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
   async getAllPurchases(req: Request, res: Response) {
     try {
       res.json(await uc.getAllPurchases());

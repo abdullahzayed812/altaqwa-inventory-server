@@ -9,17 +9,18 @@ function parseRow(row: RowDataPacket): Payment {
     customerId: row.customerId,
     customer: row.customerName
       ? {
-          id: row.customerId,
-          name: row.customerName,
-          phone: row.customerPhone ?? null,
-          address: row.customerAddress ?? null,
-          totalDebt: parseFloat(row.customerTotalDebt) || 0,
-          createdAt: new Date(row.customerCreatedAt),
-          updatedAt: new Date(row.customerUpdatedAt),
-        }
+        id: row.customerId,
+        name: row.customerName,
+        phone: row.customerPhone ?? null,
+        address: row.customerAddress ?? null,
+        totalDebt: parseFloat(row.customerTotalDebt) || 0,
+        createdAt: new Date(row.customerCreatedAt),
+        updatedAt: new Date(row.customerUpdatedAt),
+      }
       : undefined,
     amount: parseFloat(row.amount) || 0,
     method: row.method as PaymentMethod,
+    senderName: row.senderName ?? null,
     notes: row.notes ?? null,
     createdAt: new Date(row.createdAt),
   };
@@ -72,8 +73,8 @@ export class PaymentRepository {
 
   async create(data: AddPaymentDto, db: Queryable = pool): Promise<Payment> {
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO payments (customerId, amount, method, notes) VALUES (?, ?, ?, ?)',
-      [data.customerId, data.amount, data.method, data.notes ?? null]
+      'INSERT INTO payments (customerId, amount, method, senderName, notes) VALUES (?, ?, ?, ?, ?)',
+      [data.customerId, data.amount, data.method, data.senderName ?? null, data.notes ?? null]
     );
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT py.*, c.name AS customerName, c.phone AS customerPhone,

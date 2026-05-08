@@ -8,14 +8,14 @@ function parsePurchaseRow(row: RowDataPacket): Purchase {
     supplierId: row.supplierId,
     supplier: row.supplierName
       ? {
-          id: row.supplierId,
-          name: row.supplierName,
-          phone: row.supplierPhone ?? null,
-          address: row.supplierAddress ?? null,
-          totalBalance: parseFloat(row.supplierTotalBalance) || 0,
-          createdAt: new Date(row.supplierCreatedAt),
-          updatedAt: new Date(row.supplierUpdatedAt),
-        }
+        id: row.supplierId,
+        name: row.supplierName,
+        phone: row.supplierPhone ?? null,
+        address: row.supplierAddress ?? null,
+        totalBalance: parseFloat(row.supplierTotalBalance) || 0,
+        createdAt: new Date(row.supplierCreatedAt),
+        updatedAt: new Date(row.supplierUpdatedAt),
+      }
       : undefined,
     totalAmount: parseFloat(row.totalAmount) || 0,
     items: [],
@@ -32,14 +32,14 @@ function parsePurchaseItemRow(row: RowDataPacket): PurchaseItem {
     price: parseFloat(row.price) || 0,
     product: row.productName
       ? {
-          id: row.productId,
-          name: row.productName,
-          price: parseFloat(row.productPrice) || 0,
-          stock: parseInt(row.productStock) || 0,
-          imagePath: row.productImagePath ?? null,
-          createdAt: new Date(row.productCreatedAt),
-          updatedAt: new Date(row.productUpdatedAt),
-        }
+        id: row.productId,
+        name: row.productName,
+        price: parseFloat(row.productPrice) || 0,
+        stock: parseInt(row.productStock) || 0,
+        imagePath: row.productImagePath ?? null,
+        createdAt: new Date(row.productCreatedAt),
+        updatedAt: new Date(row.productUpdatedAt),
+      }
       : undefined,
   };
 }
@@ -61,22 +61,47 @@ function parseSupplierPaymentRow(row: RowDataPacket): SupplierPayment {
     supplierId: row.supplierId,
     supplier: row.supplierName
       ? {
-          id: row.supplierId,
-          name: row.supplierName,
-          phone: row.supplierPhone ?? null,
-          address: row.supplierAddress ?? null,
-          totalBalance: parseFloat(row.supplierTotalBalance) || 0,
-          createdAt: new Date(row.supplierCreatedAt),
-          updatedAt: new Date(row.supplierUpdatedAt),
-        }
+        id: row.supplierId,
+        name: row.supplierName,
+        phone: row.supplierPhone ?? null,
+        address: row.supplierAddress ?? null,
+        totalBalance: parseFloat(row.supplierTotalBalance) || 0,
+        createdAt: new Date(row.supplierCreatedAt),
+        updatedAt: new Date(row.supplierUpdatedAt),
+      }
       : undefined,
     amount: parseFloat(row.amount) || 0,
+    method: row.method as any, // PaymentMethod enum
+    senderName: row.senderName ?? null,
     note: row.note ?? null,
     createdAt: new Date(row.createdAt),
   };
 }
 
 export class PurchaseRepository {
+  async findById(id: number, db: Queryable = pool): Promise<Purchase | null> {
+    const [rows] = await db.query<RowDataPacket[]>(`
+      SELECT p.*, s.name AS supplierName, s.phone AS supplierPhone,
+        s.address AS supplierAddress, s.totalBalance AS supplierTotalBalance,
+        s.createdAt AS supplierCreatedAt, s.updatedAt AS supplierUpdatedAt
+      FROM purchases p
+      LEFT JOIN suppliers s ON p.supplierId = s.id
+      WHERE p.id = ?
+    `, [id]);
+    if (rows.length === 0) return null;
+    const purchase = parsePurchaseRow(rows[0]);
+    const [itemRows] = await db.query<RowDataPacket[]>(`
+      SELECT pi.*, pr.name AS productName, pr.price AS productPrice,
+        pr.stock AS productStock, pr.imagePath AS productImagePath,
+        pr.createdAt AS productCreatedAt, pr.updatedAt AS productUpdatedAt
+      FROM purchase_items pi
+      LEFT JOIN products pr ON pi.productId = pr.id
+      WHERE pi.purchaseId = ?
+    `, [id]);
+    purchase.items = itemRows.map(parsePurchaseItemRow);
+    return purchase;
+  }
+
   async findAll(db: Queryable = pool): Promise<Purchase[]> {
     const [rows] = await db.query<RowDataPacket[]>(`
       SELECT p.*, s.name AS supplierName, s.phone AS supplierPhone,
@@ -160,12 +185,12 @@ export class PurchaseRepository {
   }
 
   async createSupplierPayment(
-    data: { supplierId: number; amount: number; note?: string },
+    data: { supplierId: number; amount: number; method: string; senderName?: string; note?: string },
     db: Queryable = pool
   ): Promise<SupplierPayment> {
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO supplier_payments (supplierId, amount, note) VALUES (?, ?, ?)',
-      [data.supplierId, data.amount, data.note ?? null]
+      'INSERT INTO supplier_payments (supplierId, amount, method, senderName, note) VALUES (?, ?, ?, ?, ?)',
+      [data.supplierId, data.amount, data.method, data.senderName ?? null, data.note ?? null]
     );
     const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM supplier_payments WHERE id = ?', [result.insertId]);
     return parseSupplierPaymentRow(rows[0]);

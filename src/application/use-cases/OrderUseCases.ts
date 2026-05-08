@@ -20,12 +20,22 @@ export class OrderUseCases {
 
   async createOrder(data: CreateOrderDto): Promise<Order> {
     return withTransaction(async (conn) => {
+      const customerType = data.customerType || 'COMPANY';
+      if (!data.customerId) throw new Error('Customer ID is required');
       const customer = await customerRepo.findById(data.customerId, conn);
       if (!customer) throw new Error('Customer not found');
 
       const orderNumber = `ORD-${Date.now().toString().slice(-4)}`;
       const order = await orderRepo.create(
-        { orderNumber, customerId: data.customerId, totalAmount: data.totalAmount, status: OrderStatus.PENDING },
+        {
+          orderNumber,
+          customerType,
+          customerId: data.customerId,
+          driverId: data.driverId,
+          totalAmount: data.totalAmount,
+          totalDelivery: data.totalDelivery || 0,
+          status: OrderStatus.PENDING
+        },
         conn
       );
 
@@ -36,7 +46,14 @@ export class OrderUseCases {
           throw new Error(`Inssuficient stock for product: ${product?.name ?? item.productId}`);
         }
         await orderRepo.createItem(
-          { orderId: order.id, productId: item.productId, quantity: item.quantity, price: item.price },
+          {
+            orderId: order.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            deliveryFeePerTon: item.deliveryFeePerTon || 0,
+            totalDelivery: item.totalDelivery || 0
+          },
           conn
         );
         await productRepo.updateStock(item.productId, -item.quantity, conn);
@@ -59,7 +76,9 @@ export class OrderUseCases {
         for (const item of order.items ?? []) {
           await productRepo.updateStock(item.productId, item.quantity, conn);
         }
-        await customerRepo.updateDebt(order.customerId, -order.totalAmount, conn);
+        if (order.customerId) {
+          await customerRepo.updateDebt(order.customerId, -order.totalAmount, conn);
+        }
       }
 
       await orderRepo.updateStatus(id, status, conn);

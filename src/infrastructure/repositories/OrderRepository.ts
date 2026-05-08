@@ -20,22 +20,24 @@ function parseOrderRow(row: RowDataPacket): Order {
   return {
     id: row.id,
     orderNumber: row.orderNumber,
+    customerType: row.customerType,
     customerId: row.customerId,
     customer: row.customerName ? parseCustomerRow(row) : undefined,
     totalAmount: parseFloat(row.totalAmount) || 0,
+    totalDelivery: parseFloat(row.totalDelivery) || 0,
     status: row.status as OrderStatus,
     driverId: row.driverId ?? null,
     assignedDriver: row.driverId
       ? {
-          id: row.driverId,
-          name: row.driverName,
-          phone: row.driverPhone ?? null,
-          vehiclePlate: row.vehiclePlate ?? null,
-          vehicleDetails: row.vehicleDetails ?? null,
-          isAvailable: Boolean(row.driverIsAvailable),
-          createdAt: new Date(row.driverCreatedAt),
-          updatedAt: new Date(row.driverUpdatedAt),
-        }
+        id: row.driverId,
+        name: row.driverName,
+        phone: row.driverPhone ?? null,
+        vehiclePlate: row.vehiclePlate ?? null,
+        vehicleDetails: row.vehicleDetails ?? null,
+        isAvailable: Boolean(row.driverIsAvailable),
+        createdAt: new Date(row.driverCreatedAt),
+        updatedAt: new Date(row.driverUpdatedAt),
+      }
       : null,
     items: [],
     createdAt: new Date(row.createdAt),
@@ -50,23 +52,25 @@ function parseItemRow(row: RowDataPacket): OrderItem {
     productId: row.productId,
     quantity: parseInt(row.quantity),
     price: parseFloat(row.price) || 0,
+    deliveryFeePerTon: parseFloat(row.deliveryFeePerTon) || 0,
+    totalDelivery: parseFloat(row.totalDelivery) || 0,
     product: row.productName
       ? {
-          id: row.productId,
-          name: row.productName,
-          price: parseFloat(row.productPrice) || 0,
-          stock: parseInt(row.productStock) || 0,
-          imagePath: row.productImagePath ?? null,
-          createdAt: new Date(row.productCreatedAt),
-          updatedAt: new Date(row.productUpdatedAt),
-        }
+        id: row.productId,
+        name: row.productName,
+        price: parseFloat(row.productPrice) || 0,
+        stock: parseInt(row.productStock) || 0,
+        imagePath: row.productImagePath ?? null,
+        createdAt: new Date(row.productCreatedAt),
+        updatedAt: new Date(row.productUpdatedAt),
+      }
       : undefined,
   };
 }
 
 const ORDER_WITH_RELATIONS = `
   SELECT
-    o.id, o.orderNumber, o.customerId, o.totalAmount, o.status, o.driverId,
+    o.id, o.orderNumber, o.customerType, o.customerId, o.totalAmount, o.totalDelivery, o.status, o.driverId,
     o.createdAt, o.updatedAt,
     c.name AS customerName, c.phone AS customerPhone, c.address AS customerAddress,
     c.totalDebt AS customerTotalDebt, c.createdAt AS customerCreatedAt, c.updatedAt AS customerUpdatedAt,
@@ -79,7 +83,7 @@ const ORDER_WITH_RELATIONS = `
 
 const ITEMS_WITH_PRODUCT = `
   SELECT
-    oi.id, oi.orderId, oi.productId, oi.quantity, oi.price,
+    oi.id, oi.orderId, oi.productId, oi.quantity, oi.price, oi.deliveryFeePerTon, oi.totalDelivery,
     p.name AS productName, p.price AS productPrice, p.stock AS productStock,
     p.imagePath AS productImagePath, p.createdAt AS productCreatedAt, p.updatedAt AS productUpdatedAt
   FROM order_items oi
@@ -122,23 +126,23 @@ export class OrderRepository {
   }
 
   async create(
-    data: { orderNumber: string; customerId: number; totalAmount: number; status: OrderStatus },
+    data: { orderNumber: string; customerType?: 'DRIVER' | 'COMPANY'; customerId?: number | null; driverId?: number | null; totalAmount: number; totalDelivery?: number; status: OrderStatus },
     db: Queryable = pool
   ): Promise<Order> {
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO orders (orderNumber, customerId, totalAmount, status) VALUES (?, ?, ?, ?)',
-      [data.orderNumber, data.customerId, data.totalAmount, data.status]
+      'INSERT INTO orders (orderNumber, customerType, customerId, driverId, totalAmount, totalDelivery, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [data.orderNumber, data.customerType || 'COMPANY', data.customerId || null, data.driverId || null, data.totalAmount, data.totalDelivery || 0, data.status]
     );
     return (await this.findById(result.insertId, db))!;
   }
 
   async createItem(
-    data: { orderId: number; productId: number; quantity: number; price: number },
+    data: { orderId: number; productId: number; quantity: number; price: number; deliveryFeePerTon?: number; totalDelivery?: number },
     db: Queryable = pool
   ): Promise<void> {
     await db.query(
-      'INSERT INTO order_items (orderId, productId, quantity, price) VALUES (?, ?, ?, ?)',
-      [data.orderId, data.productId, data.quantity, data.price]
+      'INSERT INTO order_items (orderId, productId, quantity, price, deliveryFeePerTon, totalDelivery) VALUES (?, ?, ?, ?, ?, ?)',
+      [data.orderId, data.productId, data.quantity, data.price, data.deliveryFeePerTon || 0, data.totalDelivery || 0]
     );
   }
 

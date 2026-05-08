@@ -63,14 +63,18 @@ export interface OrderItem {
   product?: Product;
   quantity: number;
   price: number;
+  deliveryFeePerTon?: number;
+  totalDelivery?: number;
 }
 
 export interface Order {
   id: number;
   orderNumber: string;
-  customerId: number;
+  customerType?: 'DRIVER' | 'COMPANY';
+  customerId: number | null;
   customer?: Customer;
   totalAmount: number;
+  totalDelivery?: number;
   status: OrderStatus;
   driverId: number | null;
   assignedDriver?: Driver | null;
@@ -103,6 +107,7 @@ export interface Payment {
   customer?: Customer;
   amount: number;
   method: PaymentMethod;
+  senderName: string | null;
   notes: string | null;
   createdAt: Date;
 }
@@ -112,6 +117,8 @@ export interface SupplierPayment {
   supplierId: number;
   supplier?: Supplier;
   amount: number;
+  method: PaymentMethod;
+  senderName: string | null;
   note: string | null;
   createdAt: Date;
 }

@@ -26,15 +26,27 @@ export interface CreateDriverDto {
   vehicleDetails?: string;
 }
 
+export interface UpdateProductDto {
+  name?: string;
+  price?: number;
+  stock?: number;
+  imagePath?: string;
+}
+
 export interface OrderItemDto {
   productId: number;
   quantity: number;
   price: number;
+  deliveryFeePerTon?: number;
+  totalDelivery?: number;
 }
 
 export interface CreateOrderDto {
-  customerId: number;
+  customerType?: 'DRIVER' | 'COMPANY';
+  customerId?: number | null;
+  driverId?: number | null;
   totalAmount: number;
+  totalDelivery?: number;
   items: OrderItemDto[];
 }
 
@@ -53,11 +65,14 @@ export interface AddPaymentDto {
   customerId: number;
   amount: number;
   method: PaymentMethod;
+  senderName?: string;
   notes?: string;
 }
 
 export interface AddSupplierPaymentDto {
   supplierId: number;
   amount: number;
+  method: PaymentMethod;
+  senderName?: string;
   note?: string;
 }

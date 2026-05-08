@@ -19,4 +19,10 @@ export class InventoryUseCases {
     await repo.updateStock(id, quantity);
     return (await repo.findById(id))!;
   }
+
+  async updateProduct(id: number, data: Partial<CreateProductDto>): Promise<Product> {
+    const product = await repo.findById(id);
+    if (!product) throw new Error('Product not found');
+    return repo.update(id, data);
+  }
 }

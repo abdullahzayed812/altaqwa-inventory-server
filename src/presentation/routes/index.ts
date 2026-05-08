@@ -28,6 +28,7 @@ router.get('/customers/:id/orders', (req, res) => customers.getOrders(req, res))
 // Products
 router.get('/products', (req, res) => inventory.getAll(req, res));
 router.post('/products', (req, res) => inventory.create(req, res));
+router.put('/products/:id', (req, res) => inventory.update(req, res));
 router.patch('/products/:id/stock', (req, res) => inventory.updateStock(req, res));
 
 // Orders
@@ -51,6 +52,7 @@ router.get('/suppliers/:id/ledger', (req, res) => suppliers.getLedger(req, res))
 
 // Purchases
 router.post('/purchases', (req, res) => suppliers.createPurchase(req, res));
+router.get('/purchases/:id', (req, res) => suppliers.getPurchaseById(req, res));
 
 // Drivers
 router.get('/drivers', (req, res) => drivers.getAll(req, res));

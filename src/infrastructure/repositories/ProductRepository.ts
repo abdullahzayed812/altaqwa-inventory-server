@@ -48,6 +48,21 @@ export class ProductRepository {
     return (await this.findById(result.insertId, db))!;
   }
 
+  async update(id: number, data: Partial<CreateProductDto>, db: Queryable = pool): Promise<Product> {
+    const updates: string[] = [];
+    const values: any[] = [];
+    if (data.name !== undefined) { updates.push('name = ?'); values.push(data.name); }
+    if (data.price !== undefined) { updates.push('price = ?'); values.push(data.price); }
+    if (data.stock !== undefined) { updates.push('stock = ?'); values.push(data.stock); }
+    if (data.imagePath !== undefined) { updates.push('imagePath = ?'); values.push(data.imagePath); }
+
+    if (updates.length > 0) {
+      values.push(id);
+      await db.query(`UPDATE products SET ${updates.join(', ')} WHERE id = ?`, values);
+    }
+    return (await this.findById(id, db))!;
+  }
+
   async updateStock(id: number, delta: number, db: Queryable = pool): Promise<void> {
     await db.query(
       'UPDATE products SET stock = stock + ? WHERE id = ?',

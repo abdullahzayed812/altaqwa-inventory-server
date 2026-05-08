@@ -20,6 +20,16 @@ export class DashboardUseCases {
     );
     const totalPayments = parseFloat(paymentRows[0]?.totalPayments) || 0;
 
+    const [purchaseRows] = await pool.query<RowDataPacket[]>(
+      'SELECT SUM(totalAmount) AS totalPurchases FROM purchases'
+    );
+    const totalPurchases = parseFloat(purchaseRows[0]?.totalPurchases) || 0;
+
+    const [companyPaymentRows] = await pool.query<RowDataPacket[]>(
+      'SELECT SUM(amount) AS totalCompanyPayments FROM supplier_payments'
+    );
+    const totalCompanyPayments = parseFloat(companyPaymentRows[0]?.totalCompanyPayments) || 0;
+
     const [lowStockRows] = await pool.query<RowDataPacket[]>(
       'SELECT COUNT(*) AS cnt FROM products WHERE stock < 10'
     );
@@ -42,6 +52,8 @@ export class DashboardUseCases {
       totalSales,
       totalPayments,
       totalDebt,
+      totalPurchases,
+      totalCompanyPayments,
       lowStockCount,
       topProducts,
       monthlySales: [],

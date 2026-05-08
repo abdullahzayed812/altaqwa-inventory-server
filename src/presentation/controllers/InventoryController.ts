@@ -29,4 +29,13 @@ export class InventoryController {
       res.status(400).json({ error: err.message });
     }
   }
+
+  async update(req: Request, res: Response) {
+    try {
+      const id = Number(req.params.id);
+      res.json(await uc.updateProduct(id, req.body));
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
 }

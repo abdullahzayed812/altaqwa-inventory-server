@@ -51,7 +51,7 @@ export class SupplierUseCases {
   async addPayment(data: AddSupplierPaymentDto): Promise<SupplierPayment> {
     return withTransaction(async (conn) => {
       const payment = await purchaseRepo.createSupplierPayment(
-        { supplierId: data.supplierId, amount: data.amount, note: data.note },
+        { supplierId: data.supplierId, amount: data.amount, method: data.method, senderName: data.senderName, note: data.note },
         conn
       );
 
@@ -72,6 +72,10 @@ export class SupplierUseCases {
 
   async getAllPayments(): Promise<SupplierPayment[]> {
     return purchaseRepo.findAllSupplierPayments();
+  }
+
+  async getPurchaseById(id: number): Promise<Purchase | null> {
+    return purchaseRepo.findById(id);
   }
 
   async getAllPurchases(): Promise<Purchase[]> {

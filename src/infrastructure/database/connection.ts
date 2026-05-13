@@ -1,6 +1,4 @@
 import mysql, { Pool, PoolConnection } from 'mysql2/promise';
-import * as fs from 'fs';
-import * as path from 'path';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -36,15 +34,7 @@ export async function withTransaction<T>(fn: (conn: PoolConnection) => Promise<T
 }
 
 export async function initDatabase(): Promise<void> {
-  const schemaPath = path.join(__dirname, 'schema.sql');
-  const schema = fs.readFileSync(schemaPath, 'utf-8');
-  const statements = schema.split(';').map(s => s.trim()).filter(s => s.length > 0);
   const conn = await pool.getConnection();
-  try {
-    for (const statement of statements) {
-      await conn.query(statement);
-    }
-  } finally {
-    conn.release();
-  }
+  await conn.query('SELECT 1');
+  conn.release();
 }

@@ -1,3 +1,6 @@
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 INSERT IGNORE INTO products (name, price, stock) VALUES
   ('كبريتات معبأ', 350, 100),
   ('كبريتات سب', 280, 100),

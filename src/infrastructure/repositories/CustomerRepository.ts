@@ -33,8 +33,8 @@ export class CustomerRepository {
 
   async create(data: CreateCustomerDto, db: Queryable = pool): Promise<Customer> {
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO customers (name, phone, address, totalDebt) VALUES (?, ?, ?, 0)',
-      [data.name, data.phone ?? null, data.address ?? null]
+      'INSERT INTO customers (name, phone, address, totalDebt) VALUES (?, ?, ?, ?)',
+      [data.name, data.phone ?? null, data.address ?? null, data.initialDebt ?? 0]
     );
     const customer = await this.findById(result.insertId, db);
     return customer!;

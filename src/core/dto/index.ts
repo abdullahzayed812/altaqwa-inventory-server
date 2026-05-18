@@ -4,12 +4,14 @@ export interface CreateCustomerDto {
   name: string;
   phone?: string;
   address?: string;
+  initialDebt?: number;
 }
 
 export interface CreateSupplierDto {
   name: string;
   phone?: string;
   address?: string;
+  initialBalance?: number;
 }
 
 export interface CreateProductDto {
@@ -75,4 +77,16 @@ export interface AddSupplierPaymentDto {
   method: PaymentMethod;
   senderName?: string;
   note?: string;
+}
+
+export interface AddDriverPaymentDto {
+  driverId: number;
+  amount: number;
+  notes?: string;
+}
+
+export interface AddDriverDebtDto {
+  driverId: number;
+  amount: number;
+  notes?: string;
 }

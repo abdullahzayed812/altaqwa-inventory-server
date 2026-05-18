@@ -15,6 +15,12 @@ export enum SupplierLedgerType {
   PAYMENT = 'PAYMENT',
 }
 
+export enum DriverLedgerType {
+  DELIVERY = 'DELIVERY',
+  PAYMENT = 'PAYMENT',
+  DEBT = 'DEBT',
+}
+
 export interface Customer {
   id: number;
   name: string;
@@ -52,8 +58,27 @@ export interface Driver {
   vehiclePlate: string | null;
   vehicleDetails: string | null;
   isAvailable: boolean;
+  totalBalance: number;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface DriverLedger {
+  id: number;
+  driverId: number;
+  type: DriverLedgerType;
+  amount: number;
+  referenceId: number | null;
+  notes: string | null;
+  createdAt: Date;
+}
+
+export interface DriverPayment {
+  id: number;
+  driverId: number;
+  amount: number;
+  notes: string | null;
+  createdAt: Date;
 }
 
 export interface OrderItem {

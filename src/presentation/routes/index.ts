@@ -57,7 +57,11 @@ router.get('/purchases/:id', (req, res) => suppliers.getPurchaseById(req, res));
 // Drivers
 router.get('/drivers', (req, res) => drivers.getAll(req, res));
 router.post('/drivers', (req, res) => drivers.create(req, res));
+router.get('/drivers/:id', (req, res) => drivers.getById(req, res));
 router.patch('/drivers/:id/availability', (req, res) => drivers.updateAvailability(req, res));
+router.post('/drivers/:id/payments', (req, res) => drivers.addPayment(req, res));
+router.post('/drivers/:id/debt', (req, res) => drivers.addDebt(req, res));
+router.get('/drivers/:id/ledger', (req, res) => drivers.getLedger(req, res));
 
 // Dashboard & Reports
 router.get('/dashboard/stats', (req, res) => dashboard.getStats(req, res));

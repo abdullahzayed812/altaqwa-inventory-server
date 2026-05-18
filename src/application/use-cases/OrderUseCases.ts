@@ -2,12 +2,14 @@ import { withTransaction } from '../../infrastructure/database/connection';
 import { OrderRepository } from '../../infrastructure/repositories/OrderRepository';
 import { ProductRepository } from '../../infrastructure/repositories/ProductRepository';
 import { CustomerRepository } from '../../infrastructure/repositories/CustomerRepository';
-import { Order, OrderStatus } from '../../core/entities';
+import { DriverRepository } from '../../infrastructure/repositories/DriverRepository';
+import { Order, OrderStatus, DriverLedgerType } from '../../core/entities';
 import { CreateOrderDto } from '../../core/dto';
 
 const orderRepo = new OrderRepository();
 const productRepo = new ProductRepository();
 const customerRepo = new CustomerRepository();
+const driverRepo = new DriverRepository();
 
 export class OrderUseCases {
   async getAllOrders(): Promise<Order[]> {
@@ -61,6 +63,14 @@ export class OrderUseCases {
 
       await customerRepo.updateDebt(data.customerId, data.totalAmount, conn);
 
+      if (data.driverId && (data.totalDelivery ?? 0) > 0) {
+        await driverRepo.updateBalance(data.driverId, data.totalDelivery!, conn);
+        await driverRepo.createLedgerEntry(
+          { driverId: data.driverId, type: DriverLedgerType.DELIVERY, amount: data.totalDelivery!, referenceId: order.id },
+          conn
+        );
+      }
+
       return (await orderRepo.findById(order.id, conn))!;
     });
   }
@@ -78,6 +88,10 @@ export class OrderUseCases {
         }
         if (order.customerId) {
           await customerRepo.updateDebt(order.customerId, -order.totalAmount, conn);
+        }
+        if (order.driverId && (order.totalDelivery ?? 0) > 0) {
+          await driverRepo.updateBalance(order.driverId, -(order.totalDelivery ?? 0), conn);
+          await driverRepo.deleteLedgerEntryByReference(order.driverId, order.id, DriverLedgerType.DELIVERY, conn);
         }
       }
 

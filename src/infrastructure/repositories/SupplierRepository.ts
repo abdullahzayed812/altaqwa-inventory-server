@@ -33,8 +33,8 @@ export class SupplierRepository {
 
   async create(data: CreateSupplierDto, db: Queryable = pool): Promise<Supplier> {
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO suppliers (name, phone, address, totalBalance) VALUES (?, ?, ?, 0)',
-      [data.name, data.phone ?? null, data.address ?? null]
+      'INSERT INTO suppliers (name, phone, address, totalBalance) VALUES (?, ?, ?, ?)',
+      [data.name, data.phone ?? null, data.address ?? null, data.initialBalance ?? 0]
     );
     return (await this.findById(result.insertId, db))!;
   }

@@ -22,6 +22,8 @@ const reports = new ReportController();
 router.get('/customers', (req, res) => customers.getAll(req, res));
 router.post('/customers', (req, res) => customers.create(req, res));
 router.get('/customers/:id', (req, res) => customers.getById(req, res));
+router.put('/customers/:id', (req, res) => customers.update(req, res));
+router.delete('/customers/:id', (req, res) => customers.delete(req, res));
 router.get('/customers/:id/payments', (req, res) => customers.getPayments(req, res));
 router.get('/customers/:id/orders', (req, res) => customers.getOrders(req, res));
 
@@ -47,6 +49,8 @@ router.post('/suppliers', (req, res) => suppliers.create(req, res));
 router.get('/suppliers/payments/all', (req, res) => suppliers.getAllPayments(req, res));
 router.get('/suppliers/purchases/all', (req, res) => suppliers.getAllPurchases(req, res));
 router.get('/suppliers/:id', (req, res) => suppliers.getById(req, res));
+router.put('/suppliers/:id', (req, res) => suppliers.update(req, res));
+router.delete('/suppliers/:id', (req, res) => suppliers.delete(req, res));
 router.post('/suppliers/:id/payments', (req, res) => suppliers.addPayment(req, res));
 router.get('/suppliers/:id/ledger', (req, res) => suppliers.getLedger(req, res));
 
@@ -58,6 +62,8 @@ router.get('/purchases/:id', (req, res) => suppliers.getPurchaseById(req, res));
 router.get('/drivers', (req, res) => drivers.getAll(req, res));
 router.post('/drivers', (req, res) => drivers.create(req, res));
 router.get('/drivers/:id', (req, res) => drivers.getById(req, res));
+router.put('/drivers/:id', (req, res) => drivers.update(req, res));
+router.delete('/drivers/:id', (req, res) => drivers.delete(req, res));
 router.patch('/drivers/:id/availability', (req, res) => drivers.updateAvailability(req, res));
 router.post('/drivers/:id/payments', (req, res) => drivers.addPayment(req, res));
 router.post('/drivers/:id/debt', (req, res) => drivers.addDebt(req, res));

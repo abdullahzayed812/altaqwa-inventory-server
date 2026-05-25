@@ -1,7 +1,7 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { pool, Queryable } from '../database/connection';
 import { Customer } from '../../core/entities';
-import { CreateCustomerDto } from '../../core/dto';
+import { CreateCustomerDto, UpdateCustomerDto } from '../../core/dto';
 
 function parseRow(row: RowDataPacket): Customer {
   return {
@@ -38,6 +38,23 @@ export class CustomerRepository {
     );
     const customer = await this.findById(result.insertId, db);
     return customer!;
+  }
+
+  async update(id: number, data: UpdateCustomerDto, db: Queryable = pool): Promise<Customer> {
+    const fields: string[] = [];
+    const values: any[] = [];
+    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+    if (data.phone !== undefined) { fields.push('phone = ?'); values.push(data.phone); }
+    if (data.address !== undefined) { fields.push('address = ?'); values.push(data.address); }
+    if (fields.length > 0) {
+      values.push(id);
+      await db.query(`UPDATE customers SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+    return (await this.findById(id, db))!;
+  }
+
+  async delete(id: number, db: Queryable = pool): Promise<void> {
+    await db.query('DELETE FROM customers WHERE id = ?', [id]);
   }
 
   async updateDebt(id: number, delta: number, db: Queryable = pool): Promise<void> {

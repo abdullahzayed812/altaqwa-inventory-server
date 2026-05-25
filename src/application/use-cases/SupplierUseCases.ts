@@ -3,7 +3,7 @@ import { SupplierRepository } from '../../infrastructure/repositories/SupplierRe
 import { PurchaseRepository } from '../../infrastructure/repositories/PurchaseRepository';
 import { ProductRepository } from '../../infrastructure/repositories/ProductRepository';
 import { Supplier, Purchase, SupplierPayment, SupplierLedger, SupplierLedgerType } from '../../core/entities';
-import { CreateSupplierDto, CreatePurchaseDto, AddSupplierPaymentDto } from '../../core/dto';
+import { CreateSupplierDto, UpdateSupplierDto, CreatePurchaseDto, AddSupplierPaymentDto } from '../../core/dto';
 
 const supplierRepo = new SupplierRepository();
 const purchaseRepo = new PurchaseRepository();
@@ -20,6 +20,25 @@ export class SupplierUseCases {
 
   async addSupplier(data: CreateSupplierDto): Promise<Supplier> {
     return supplierRepo.create(data);
+  }
+
+  async updateSupplier(id: number, data: UpdateSupplierDto): Promise<Supplier> {
+    const supplier = await supplierRepo.findById(id);
+    if (!supplier) throw new Error('Supplier not found');
+    return supplierRepo.update(id, data);
+  }
+
+  async deleteSupplier(id: number): Promise<void> {
+    const supplier = await supplierRepo.findById(id);
+    if (!supplier) throw new Error('Supplier not found');
+    try {
+      await supplierRepo.delete(id);
+    } catch (err: any) {
+      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+        throw new Error('لا يمكن حذف هذا المورد لأن له مشتريات أو مدفوعات مرتبطة');
+      }
+      throw err;
+    }
   }
 
   async createPurchase(data: CreatePurchaseDto): Promise<Purchase> {

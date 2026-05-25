@@ -34,6 +34,23 @@ export class CustomerController {
     }
   }
 
+  async update(req: Request, res: Response) {
+    try {
+      res.json(await uc.updateCustomer(Number(req.params.id), req.body));
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  async delete(req: Request, res: Response) {
+    try {
+      await uc.deleteCustomer(Number(req.params.id));
+      res.status(204).send();
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
   async getPayments(req: Request, res: Response) {
     try {
       const customerId = Number(req.params.id);

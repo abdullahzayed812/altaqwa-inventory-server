@@ -1,7 +1,7 @@
 import { withTransaction } from '../../infrastructure/database/connection';
 import { DriverRepository } from '../../infrastructure/repositories/DriverRepository';
 import { Driver, DriverLedger, DriverLedgerType } from '../../core/entities';
-import { CreateDriverDto, AddDriverPaymentDto, AddDriverDebtDto } from '../../core/dto';
+import { CreateDriverDto, UpdateDriverDto, AddDriverPaymentDto, AddDriverDebtDto } from '../../core/dto';
 
 const repo = new DriverRepository();
 
@@ -16,6 +16,25 @@ export class DriverUseCases {
 
   async addDriver(data: CreateDriverDto): Promise<Driver> {
     return repo.create(data);
+  }
+
+  async updateDriver(id: number, data: UpdateDriverDto): Promise<Driver> {
+    const driver = await repo.findById(id);
+    if (!driver) throw new Error('Driver not found');
+    return repo.update(id, data);
+  }
+
+  async deleteDriver(id: number): Promise<void> {
+    const driver = await repo.findById(id);
+    if (!driver) throw new Error('Driver not found');
+    try {
+      await repo.delete(id);
+    } catch (err: any) {
+      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+        throw new Error('لا يمكن حذف هذا السائق لأن له طلبات أو مدفوعات مرتبطة');
+      }
+      throw err;
+    }
   }
 
   async updateAvailability(id: number, isAvailable: boolean): Promise<Driver> {

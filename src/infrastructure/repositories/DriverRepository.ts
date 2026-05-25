@@ -1,7 +1,7 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { pool, Queryable } from '../database/connection';
 import { Driver, DriverLedger, DriverLedgerType, DriverPayment } from '../../core/entities';
-import { CreateDriverDto } from '../../core/dto';
+import { CreateDriverDto, UpdateDriverDto } from '../../core/dto';
 
 export function parseRow(row: RowDataPacket): Driver {
   return {
@@ -61,6 +61,24 @@ export class DriverRepository {
       [data.name, data.phone ?? null, data.vehiclePlate ?? null, data.vehicleDetails ?? null, data.initialBalance ?? 0]
     );
     return (await this.findById(result.insertId, db))!;
+  }
+
+  async update(id: number, data: UpdateDriverDto, db: Queryable = pool): Promise<Driver> {
+    const fields: string[] = [];
+    const values: any[] = [];
+    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+    if (data.phone !== undefined) { fields.push('phone = ?'); values.push(data.phone); }
+    if (data.vehiclePlate !== undefined) { fields.push('vehiclePlate = ?'); values.push(data.vehiclePlate); }
+    if (data.vehicleDetails !== undefined) { fields.push('vehicleDetails = ?'); values.push(data.vehicleDetails); }
+    if (fields.length > 0) {
+      values.push(id);
+      await db.query(`UPDATE drivers SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+    return (await this.findById(id, db))!;
+  }
+
+  async delete(id: number, db: Queryable = pool): Promise<void> {
+    await db.query('DELETE FROM drivers WHERE id = ?', [id]);
   }
 
   async updateAvailability(id: number, isAvailable: boolean, db: Queryable = pool): Promise<Driver> {

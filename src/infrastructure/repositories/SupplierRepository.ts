@@ -1,7 +1,7 @@
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { pool, Queryable } from '../database/connection';
 import { Supplier } from '../../core/entities';
-import { CreateSupplierDto } from '../../core/dto';
+import { CreateSupplierDto, UpdateSupplierDto } from '../../core/dto';
 
 export function parseRow(row: RowDataPacket): Supplier {
   return {
@@ -37,6 +37,23 @@ export class SupplierRepository {
       [data.name, data.phone ?? null, data.address ?? null, data.initialBalance ?? 0]
     );
     return (await this.findById(result.insertId, db))!;
+  }
+
+  async update(id: number, data: UpdateSupplierDto, db: Queryable = pool): Promise<Supplier> {
+    const fields: string[] = [];
+    const values: any[] = [];
+    if (data.name !== undefined) { fields.push('name = ?'); values.push(data.name); }
+    if (data.phone !== undefined) { fields.push('phone = ?'); values.push(data.phone); }
+    if (data.address !== undefined) { fields.push('address = ?'); values.push(data.address); }
+    if (fields.length > 0) {
+      values.push(id);
+      await db.query(`UPDATE suppliers SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+    return (await this.findById(id, db))!;
+  }
+
+  async delete(id: number, db: Queryable = pool): Promise<void> {
+    await db.query('DELETE FROM suppliers WHERE id = ?', [id]);
   }
 
   async updateBalance(id: number, delta: number, db: Queryable = pool): Promise<void> {

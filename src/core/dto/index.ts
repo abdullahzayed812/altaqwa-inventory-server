@@ -29,6 +29,25 @@ export interface CreateDriverDto {
   initialBalance?: number;
 }
 
+export interface UpdateCustomerDto {
+  name?: string;
+  phone?: string | null;
+  address?: string | null;
+}
+
+export interface UpdateSupplierDto {
+  name?: string;
+  phone?: string | null;
+  address?: string | null;
+}
+
+export interface UpdateDriverDto {
+  name?: string;
+  phone?: string | null;
+  vehiclePlate?: string | null;
+  vehicleDetails?: string | null;
+}
+
 export interface UpdateProductDto {
   name?: string;
   price?: number;

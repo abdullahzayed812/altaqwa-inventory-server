@@ -30,6 +30,23 @@ export class DriverController {
     }
   }
 
+  async update(req: Request, res: Response) {
+    try {
+      res.json(await uc.updateDriver(Number(req.params.id), req.body));
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  async delete(req: Request, res: Response) {
+    try {
+      await uc.deleteDriver(Number(req.params.id));
+      res.status(204).send();
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
   async updateAvailability(req: Request, res: Response) {
     try {
       const id = Number(req.params.id);

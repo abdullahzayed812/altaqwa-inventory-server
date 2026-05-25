@@ -1,8 +1,8 @@
-import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
-import { pool, Queryable } from '../database/connection';
-import { Order, OrderItem, OrderStatus } from '../../core/entities';
-import { parseRow as parseProduct } from './ProductRepository';
-import { parseRow as parseDriver } from './DriverRepository';
+import { RowDataPacket, ResultSetHeader } from "mysql2/promise";
+import { pool, Queryable } from "../database/connection";
+import { Order, OrderItem, OrderStatus } from "../../core/entities";
+import { parseRow as parseProduct } from "./ProductRepository";
+import { parseRow as parseDriver } from "./DriverRepository";
 
 function parseCustomerRow(row: RowDataPacket) {
   return {
@@ -29,15 +29,16 @@ function parseOrderRow(row: RowDataPacket): Order {
     driverId: row.driverId ?? null,
     assignedDriver: row.driverId
       ? {
-        id: row.driverId,
-        name: row.driverName,
-        phone: row.driverPhone ?? null,
-        vehiclePlate: row.vehiclePlate ?? null,
-        vehicleDetails: row.vehicleDetails ?? null,
-        isAvailable: Boolean(row.driverIsAvailable),
-        createdAt: new Date(row.driverCreatedAt),
-        updatedAt: new Date(row.driverUpdatedAt),
-      }
+          id: row.driverId,
+          name: row.driverName,
+          phone: row.driverPhone ?? null,
+          vehiclePlate: row.vehiclePlate ?? null,
+          vehicleDetails: row.vehicleDetails ?? null,
+          totalBalance: row.totalBalance ?? null,
+          isAvailable: Boolean(row.driverIsAvailable),
+          createdAt: new Date(row.driverCreatedAt),
+          updatedAt: new Date(row.driverUpdatedAt),
+        }
       : null,
     items: [],
     createdAt: new Date(row.createdAt),
@@ -56,14 +57,14 @@ function parseItemRow(row: RowDataPacket): OrderItem {
     totalDelivery: parseFloat(row.totalDelivery) || 0,
     product: row.productName
       ? {
-        id: row.productId,
-        name: row.productName,
-        price: parseFloat(row.productPrice) || 0,
-        stock: parseInt(row.productStock) || 0,
-        imagePath: row.productImagePath ?? null,
-        createdAt: new Date(row.productCreatedAt),
-        updatedAt: new Date(row.productUpdatedAt),
-      }
+          id: row.productId,
+          name: row.productName,
+          price: parseFloat(row.productPrice) || 0,
+          stock: parseInt(row.productStock) || 0,
+          imagePath: row.productImagePath ?? null,
+          createdAt: new Date(row.productCreatedAt),
+          updatedAt: new Date(row.productUpdatedAt),
+        }
       : undefined,
   };
 }
@@ -92,100 +93,106 @@ const ITEMS_WITH_PRODUCT = `
 
 async function attachItems(orders: Order[], db: Queryable): Promise<Order[]> {
   if (orders.length === 0) return orders;
-  const ids = orders.map(o => o.id);
-  const [itemRows] = await db.query<RowDataPacket[]>(
-    `${ITEMS_WITH_PRODUCT} WHERE oi.orderId IN (${ids.map(() => '?').join(',')})`,
-    ids
-  );
+  const ids = orders.map((o) => o.id);
+  const [itemRows] = await db.query<RowDataPacket[]>(`${ITEMS_WITH_PRODUCT} WHERE oi.orderId IN (${ids.map(() => "?").join(",")})`, ids);
   const itemMap = new Map<number, OrderItem[]>();
   for (const row of itemRows) {
     const item = parseItemRow(row);
     if (!itemMap.has(item.orderId)) itemMap.set(item.orderId, []);
     itemMap.get(item.orderId)!.push(item);
   }
-  return orders.map(o => ({ ...o, items: itemMap.get(o.id) ?? [] }));
+  return orders.map((o) => ({ ...o, items: itemMap.get(o.id) ?? [] }));
 }
 
 export class OrderRepository {
   async findAll(db: Queryable = pool): Promise<Order[]> {
-    const [rows] = await db.query<RowDataPacket[]>(
-      `${ORDER_WITH_RELATIONS} ORDER BY o.createdAt DESC`
-    );
+    const [rows] = await db.query<RowDataPacket[]>(`${ORDER_WITH_RELATIONS} ORDER BY o.createdAt DESC`);
     const orders = rows.map(parseOrderRow);
     return attachItems(orders, db);
   }
 
   async findById(id: number, db: Queryable = pool): Promise<Order | null> {
-    const [rows] = await db.query<RowDataPacket[]>(
-      `${ORDER_WITH_RELATIONS} WHERE o.id = ?`,
-      [id]
-    );
+    const [rows] = await db.query<RowDataPacket[]>(`${ORDER_WITH_RELATIONS} WHERE o.id = ?`, [id]);
     if (rows.length === 0) return null;
     const orders = await attachItems([parseOrderRow(rows[0])], db);
     return orders[0];
   }
 
   async create(
-    data: { orderNumber: string; customerType?: 'DRIVER' | 'COMPANY'; customerId?: number | null; driverId?: number | null; totalAmount: number; totalDelivery?: number; status: OrderStatus },
-    db: Queryable = pool
+    data: {
+      orderNumber: string;
+      customerType?: "DRIVER" | "COMPANY";
+      customerId?: number | null;
+      driverId?: number | null;
+      totalAmount: number;
+      totalDelivery?: number;
+      status: OrderStatus;
+    },
+    db: Queryable = pool,
   ): Promise<Order> {
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO orders (orderNumber, customerType, customerId, driverId, totalAmount, totalDelivery, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [data.orderNumber, data.customerType || 'COMPANY', data.customerId || null, data.driverId || null, data.totalAmount, data.totalDelivery || 0, data.status]
+      "INSERT INTO orders (orderNumber, customerType, customerId, driverId, totalAmount, totalDelivery, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        data.orderNumber,
+        data.customerType || "COMPANY",
+        data.customerId || null,
+        data.driverId || null,
+        data.totalAmount,
+        data.totalDelivery || 0,
+        data.status,
+      ],
     );
     return (await this.findById(result.insertId, db))!;
   }
 
   async createItem(
     data: { orderId: number; productId: number; quantity: number; price: number; deliveryFeePerTon?: number; totalDelivery?: number },
-    db: Queryable = pool
+    db: Queryable = pool,
   ): Promise<void> {
-    await db.query(
-      'INSERT INTO order_items (orderId, productId, quantity, price, deliveryFeePerTon, totalDelivery) VALUES (?, ?, ?, ?, ?, ?)',
-      [data.orderId, data.productId, data.quantity, data.price, data.deliveryFeePerTon || 0, data.totalDelivery || 0]
-    );
+    await db.query("INSERT INTO order_items (orderId, productId, quantity, price, deliveryFeePerTon, totalDelivery) VALUES (?, ?, ?, ?, ?, ?)", [
+      data.orderId,
+      data.productId,
+      data.quantity,
+      data.price,
+      data.deliveryFeePerTon || 0,
+      data.totalDelivery || 0,
+    ]);
   }
 
   async updateStatus(id: number, status: OrderStatus, db: Queryable = pool): Promise<void> {
-    await db.query('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+    await db.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
   }
 
   async assignDriver(orderId: number, driverId: number, db: Queryable = pool): Promise<Order> {
-    await db.query(
-      'UPDATE orders SET driverId = ?, status = ? WHERE id = ?',
-      [driverId, OrderStatus.ASSIGNED, orderId]
-    );
+    await db.query("UPDATE orders SET driverId = ?, status = ? WHERE id = ?", [driverId, OrderStatus.ASSIGNED, orderId]);
     return (await this.findById(orderId, db))!;
   }
 
   async findByCustomerId(customerId: number, db: Queryable = pool): Promise<Order[]> {
-    const [rows] = await db.query<RowDataPacket[]>(
-      `${ORDER_WITH_RELATIONS} WHERE o.customerId = ? ORDER BY o.createdAt DESC`,
-      [customerId]
-    );
+    const [rows] = await db.query<RowDataPacket[]>(`${ORDER_WITH_RELATIONS} WHERE o.customerId = ? ORDER BY o.createdAt DESC`, [customerId]);
     return attachItems(rows.map(parseOrderRow), db);
   }
 
   async findByCustomerIdFiltered(
     customerId: number,
     filters: { startDate?: string; endDate?: string; keyword?: string } = {},
-    db: Queryable = pool
+    db: Queryable = pool,
   ): Promise<Order[]> {
     let query = `${ORDER_WITH_RELATIONS} WHERE o.customerId = ?`;
     const params: any[] = [customerId];
     if (filters.startDate) {
-      query += ' AND DATE(o.createdAt) >= ?';
+      query += " AND DATE(o.createdAt) >= ?";
       params.push(filters.startDate);
     }
     if (filters.endDate) {
-      query += ' AND DATE(o.createdAt) <= ?';
+      query += " AND DATE(o.createdAt) <= ?";
       params.push(filters.endDate);
     }
     if (filters.keyword) {
-      query += ' AND (o.orderNumber LIKE ? OR CAST(o.totalAmount AS CHAR) LIKE ?)';
+      query += " AND (o.orderNumber LIKE ? OR CAST(o.totalAmount AS CHAR) LIKE ?)";
       params.push(`%${filters.keyword}%`, `%${filters.keyword}%`);
     }
-    query += ' ORDER BY o.createdAt DESC';
+    query += " ORDER BY o.createdAt DESC";
     const [rows] = await db.query<RowDataPacket[]>(query, params);
     return attachItems(rows.map(parseOrderRow), db);
   }

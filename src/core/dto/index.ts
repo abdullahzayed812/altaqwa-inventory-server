@@ -26,6 +26,7 @@ export interface CreateDriverDto {
   phone?: string;
   vehiclePlate?: string;
   vehicleDetails?: string;
+  initialBalance?: number;
 }
 
 export interface UpdateProductDto {

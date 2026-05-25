@@ -57,8 +57,8 @@ export class DriverRepository {
 
   async create(data: CreateDriverDto, db: Queryable = pool): Promise<Driver> {
     const [result] = await db.query<ResultSetHeader>(
-      'INSERT INTO drivers (name, phone, vehiclePlate, vehicleDetails) VALUES (?, ?, ?, ?)',
-      [data.name, data.phone ?? null, data.vehiclePlate ?? null, data.vehicleDetails ?? null]
+      'INSERT INTO drivers (name, phone, vehiclePlate, vehicleDetails, totalBalance) VALUES (?, ?, ?, ?, ?)',
+      [data.name, data.phone ?? null, data.vehiclePlate ?? null, data.vehicleDetails ?? null, data.initialBalance ?? 0]
     );
     return (await this.findById(result.insertId, db))!;
   }

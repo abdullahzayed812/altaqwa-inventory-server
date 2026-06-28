@@ -99,4 +99,30 @@ export class SupplierController {
       res.status(500).json({ error: err.message });
     }
   }
+
+  async updatePurchase(req: Request, res: Response) {
+    try {
+      res.json(await uc.updatePurchase(Number(req.params.id), req.body));
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
+
+  async getPaymentById(req: Request, res: Response) {
+    try {
+      const payment = await uc.getSupplierPaymentById(Number(req.params.id));
+      if (!payment) return res.status(404).json({ error: 'Supplier payment not found' });
+      res.json(payment);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+
+  async updatePayment(req: Request, res: Response) {
+    try {
+      res.json(await uc.updatePayment(Number(req.params.id), req.body));
+    } catch (err: any) {
+      res.status(400).json({ error: err.message });
+    }
+  }
 }

@@ -1,10 +1,22 @@
-import { PaymentMethod } from '../entities';
+import { PaymentMethod, CustomerType } from '../entities';
 
 export interface CreateCustomerDto {
   name: string;
   phone?: string;
   address?: string;
+  type?: CustomerType;
+  vehiclePlate?: string;
+  vehicleDetails?: string;
   initialDebt?: number;
+}
+
+export interface UpdateCustomerDto {
+  name?: string;
+  phone?: string | null;
+  address?: string | null;
+  vehiclePlate?: string | null;
+  vehicleDetails?: string | null;
+  isAvailable?: boolean;
 }
 
 export interface CreateSupplierDto {
@@ -14,38 +26,17 @@ export interface CreateSupplierDto {
   initialBalance?: number;
 }
 
-export interface CreateProductDto {
-  name: string;
-  price: number;
-  stock: number;
-  imagePath?: string;
-}
-
-export interface CreateDriverDto {
-  name: string;
-  phone?: string;
-  vehiclePlate?: string;
-  vehicleDetails?: string;
-  initialBalance?: number;
-}
-
-export interface UpdateCustomerDto {
-  name?: string;
-  phone?: string | null;
-  address?: string | null;
-}
-
 export interface UpdateSupplierDto {
   name?: string;
   phone?: string | null;
   address?: string | null;
 }
 
-export interface UpdateDriverDto {
-  name?: string;
-  phone?: string | null;
-  vehiclePlate?: string | null;
-  vehicleDetails?: string | null;
+export interface CreateProductDto {
+  name: string;
+  price: number;
+  stock: number;
+  imagePath?: string;
 }
 
 export interface UpdateProductDto {
@@ -64,11 +55,9 @@ export interface OrderItemDto {
 }
 
 export interface CreateOrderDto {
-  customerType?: 'DRIVER' | 'COMPANY';
-  customerId?: number | null;
-  driverId?: number | null;
+  customerId: number;
   totalAmount: number;
-  totalDelivery?: number;
+  naulonUncollected?: number;
   items: OrderItemDto[];
 }
 
@@ -83,12 +72,23 @@ export interface CreatePurchaseDto {
   items: PurchaseItemDto[];
 }
 
+export interface UpdatePurchaseDto {
+  items: PurchaseItemDto[];
+}
+
 export interface AddPaymentDto {
   customerId: number;
   amount: number;
   method: PaymentMethod;
   senderName?: string;
   notes?: string;
+}
+
+export interface UpdatePaymentDto {
+  amount: number;
+  method?: PaymentMethod;
+  senderName?: string | null;
+  notes?: string | null;
 }
 
 export interface AddSupplierPaymentDto {
@@ -99,14 +99,9 @@ export interface AddSupplierPaymentDto {
   note?: string;
 }
 
-export interface AddDriverPaymentDto {
-  driverId: number;
+export interface UpdateSupplierPaymentDto {
   amount: number;
-  notes?: string;
-}
-
-export interface AddDriverDebtDto {
-  driverId: number;
-  amount: number;
-  notes?: string;
+  method?: PaymentMethod;
+  senderName?: string | null;
+  note?: string | null;
 }

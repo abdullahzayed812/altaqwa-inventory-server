@@ -2,14 +2,12 @@ import { withTransaction } from '../../infrastructure/database/connection';
 import { OrderRepository } from '../../infrastructure/repositories/OrderRepository';
 import { ProductRepository } from '../../infrastructure/repositories/ProductRepository';
 import { CustomerRepository } from '../../infrastructure/repositories/CustomerRepository';
-import { DriverRepository } from '../../infrastructure/repositories/DriverRepository';
-import { Order, OrderStatus, DriverLedgerType } from '../../core/entities';
+import { Order, OrderStatus } from '../../core/entities';
 import { CreateOrderDto } from '../../core/dto';
 
 const orderRepo = new OrderRepository();
 const productRepo = new ProductRepository();
 const customerRepo = new CustomerRepository();
-const driverRepo = new DriverRepository();
 
 export class OrderUseCases {
   async getAllOrders(): Promise<Order[]> {
@@ -22,21 +20,19 @@ export class OrderUseCases {
 
   async createOrder(data: CreateOrderDto): Promise<Order> {
     return withTransaction(async (conn) => {
-      const customerType = data.customerType || 'COMPANY';
-      if (!data.customerId) throw new Error('Customer ID is required');
       const customer = await customerRepo.findById(data.customerId, conn);
       if (!customer) throw new Error('Customer not found');
 
       const orderNumber = `ORD-${Date.now().toString().slice(-4)}`;
+      const naulon = data.naulonUncollected ?? 0;
+
       const order = await orderRepo.create(
         {
           orderNumber,
-          customerType,
           customerId: data.customerId,
-          driverId: data.driverId,
           totalAmount: data.totalAmount,
-          totalDelivery: data.totalDelivery || 0,
-          status: OrderStatus.PENDING
+          naulonUncollected: naulon,
+          status: OrderStatus.PENDING,
         },
         conn
       );
@@ -45,7 +41,7 @@ export class OrderUseCases {
         const stock = await productRepo.checkStock(item.productId, conn);
         if (stock < item.quantity) {
           const product = await productRepo.findById(item.productId, conn);
-          throw new Error(`Inssuficient stock for product: ${product?.name ?? item.productId}`);
+          throw new Error(`Insufficient stock for product: ${product?.name ?? item.productId}`);
         }
         await orderRepo.createItem(
           {
@@ -54,22 +50,18 @@ export class OrderUseCases {
             quantity: item.quantity,
             price: item.price,
             deliveryFeePerTon: item.deliveryFeePerTon || 0,
-            totalDelivery: item.totalDelivery || 0
+            totalDelivery: item.totalDelivery || 0,
           },
           conn
         );
         await productRepo.updateStock(item.productId, -item.quantity, conn);
       }
 
-      await customerRepo.updateDebt(data.customerId, data.totalAmount, conn);
-
-      if (data.driverId && (data.totalDelivery ?? 0) > 0) {
-        await driverRepo.updateBalance(data.driverId, data.totalDelivery!, conn);
-        await driverRepo.createLedgerEntry(
-          { driverId: data.driverId, type: DriverLedgerType.DELIVERY, amount: data.totalDelivery!, referenceId: order.id },
-          conn
-        );
-      }
+      // Regular customers: owe totalAmount (naoulon/ton already deducted from total)
+      // Drivers: owe totalAmount minus uncollected delivery fee (fee is credit to driver)
+      const isDriver = customer.type === 'driver';
+      const debtDelta = data.totalAmount - (isDriver ? naulon : 0);
+      await customerRepo.updateDebt(data.customerId, debtDelta, conn);
 
       return (await orderRepo.findById(order.id, conn))!;
     });
@@ -87,20 +79,18 @@ export class OrderUseCases {
           await productRepo.updateStock(item.productId, item.quantity, conn);
         }
         if (order.customerId) {
-          await customerRepo.updateDebt(order.customerId, -order.totalAmount, conn);
-        }
-        if (order.driverId && (order.totalDelivery ?? 0) > 0) {
-          await driverRepo.updateBalance(order.driverId, -(order.totalDelivery ?? 0), conn);
-          await driverRepo.deleteLedgerEntryByReference(order.driverId, order.id, DriverLedgerType.DELIVERY, conn);
+          const customer = await customerRepo.findById(order.customerId, conn);
+          const isDriver = customer?.type === 'driver';
+          await customerRepo.updateDebt(
+            order.customerId,
+            -(order.totalAmount - (isDriver ? order.naulonUncollected : 0)),
+            conn
+          );
         }
       }
 
       await orderRepo.updateStatus(id, status, conn);
       return (await orderRepo.findById(id, conn))!;
     });
-  }
-
-  async assignDriver(orderId: number, driverId: number): Promise<Order> {
-    return orderRepo.assignDriver(orderId, driverId);
   }
 }

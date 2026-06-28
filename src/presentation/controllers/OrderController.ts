@@ -33,14 +33,4 @@ export class OrderController {
       res.status(400).json({ error: err.message });
     }
   }
-
-  async assignDriver(req: Request, res: Response) {
-    try {
-      const orderId = Number(req.params.id);
-      const { driverId } = req.body;
-      res.json(await uc.assignDriver(orderId, driverId));
-    } catch (err: any) {
-      res.status(400).json({ error: err.message });
-    }
-  }
 }

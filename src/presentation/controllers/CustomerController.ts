@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CustomerUseCases } from '../../application/use-cases/CustomerUseCases';
 import { PaymentUseCases } from '../../application/use-cases/PaymentUseCases';
 import { OrderUseCases } from '../../application/use-cases/OrderUseCases';
+import { CustomerType } from '../../core/entities';
 
 const uc = new CustomerUseCases();
 const paymentUc = new PaymentUseCases();
@@ -10,7 +11,12 @@ const orderUc = new OrderUseCases();
 export class CustomerController {
   async getAll(req: Request, res: Response) {
     try {
-      res.json(await uc.getAllCustomers());
+      const { type } = req.query as { type?: string };
+      if (type === 'customer' || type === 'driver') {
+        res.json(await uc.getCustomersByType(type as CustomerType));
+      } else {
+        res.json(await uc.getAllCustomers());
+      }
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

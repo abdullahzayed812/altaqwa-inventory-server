@@ -16,7 +16,6 @@ async function seed() {
       "order_items",
       "orders",
       "payments",
-      "drivers",
       "products",
       "suppliers",
       "customers",
@@ -50,25 +49,15 @@ async function seed() {
         ('الشركة الدولية للمحاصيل', '', '', 0)
     `);
 
-    // ── Drivers ───────────────────────────────────────────────────────────────
-    await conn.query(`
-      INSERT INTO drivers (name, phone, vehiclePlate, vehicleDetails, isAvailable) VALUES
-        ('سعيد النجار', '0100112233', 'أ ب ج 123', 'جامبو حمراء',      1),
-        ('محمد صبري',   '0111445566', 'س ص ع 456', 'تويوتا ربع نقل',   1),
-        ('علي فرج',     '0122778899', 'ط ر ل 789', 'مرسيدس أكتروس',   0)
-    `);
-
     // ─────────────────────────────────────────────────────────────────────────
     // Print summary
     // ─────────────────────────────────────────────────────────────────────────
     const [[{ products }]] = await conn.query(`SELECT COUNT(*) AS products  FROM products`) as any[];
     const [[{ suppliers }]] = await conn.query(`SELECT COUNT(*) AS suppliers FROM suppliers`) as any[];
-    const [[{ drivers }]] = await conn.query(`SELECT COUNT(*) AS drivers   FROM drivers`) as any[];
 
     console.log('');
     console.log(`📦 ${products}  products`);
     console.log(`🏭 ${suppliers} suppliers`);
-    console.log(`🚗 ${drivers}   drivers`);
     console.log('');
     console.log('✅ Seeding completed.');
   } catch (err) {

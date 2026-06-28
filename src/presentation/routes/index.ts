@@ -4,7 +4,6 @@ import { InventoryController } from '../controllers/InventoryController';
 import { OrderController } from '../controllers/OrderController';
 import { PaymentController } from '../controllers/PaymentController';
 import { SupplierController } from '../controllers/SupplierController';
-import { DriverController } from '../controllers/DriverController';
 import { DashboardController } from '../controllers/DashboardController';
 import { ReportController } from '../controllers/ReportController';
 
@@ -14,7 +13,6 @@ const inventory = new InventoryController();
 const orders = new OrderController();
 const payments = new PaymentController();
 const suppliers = new SupplierController();
-const drivers = new DriverController();
 const dashboard = new DashboardController();
 const reports = new ReportController();
 
@@ -37,11 +35,11 @@ router.patch('/products/:id/stock', (req, res) => inventory.updateStock(req, res
 router.get('/orders', (req, res) => orders.getAll(req, res));
 router.post('/orders', (req, res) => orders.create(req, res));
 router.patch('/orders/:id/status', (req, res) => orders.updateStatus(req, res));
-router.patch('/orders/:id/assign-driver', (req, res) => orders.assignDriver(req, res));
 
 // Payments (customer payments)
 router.get('/payments', (req, res) => payments.getAll(req, res));
 router.post('/payments', (req, res) => payments.create(req, res));
+router.put('/payments/:id', (req, res) => payments.update(req, res));
 
 // Suppliers
 router.get('/suppliers', (req, res) => suppliers.getAll(req, res));
@@ -57,17 +55,11 @@ router.get('/suppliers/:id/ledger', (req, res) => suppliers.getLedger(req, res))
 // Purchases
 router.post('/purchases', (req, res) => suppliers.createPurchase(req, res));
 router.get('/purchases/:id', (req, res) => suppliers.getPurchaseById(req, res));
+router.put('/purchases/:id', (req, res) => suppliers.updatePurchase(req, res));
 
-// Drivers
-router.get('/drivers', (req, res) => drivers.getAll(req, res));
-router.post('/drivers', (req, res) => drivers.create(req, res));
-router.get('/drivers/:id', (req, res) => drivers.getById(req, res));
-router.put('/drivers/:id', (req, res) => drivers.update(req, res));
-router.delete('/drivers/:id', (req, res) => drivers.delete(req, res));
-router.patch('/drivers/:id/availability', (req, res) => drivers.updateAvailability(req, res));
-router.post('/drivers/:id/payments', (req, res) => drivers.addPayment(req, res));
-router.post('/drivers/:id/debt', (req, res) => drivers.addDebt(req, res));
-router.get('/drivers/:id/ledger', (req, res) => drivers.getLedger(req, res));
+// Supplier payments
+router.get('/supplier-payments/:id', (req, res) => suppliers.getPaymentById(req, res));
+router.put('/supplier-payments/:id', (req, res) => suppliers.updatePayment(req, res));
 
 // Dashboard & Reports
 router.get('/dashboard/stats', (req, res) => dashboard.getStats(req, res));

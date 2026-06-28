@@ -1,8 +1,6 @@
 import { RowDataPacket, ResultSetHeader } from "mysql2/promise";
 import { pool, Queryable } from "../database/connection";
-import { Order, OrderItem, OrderStatus } from "../../core/entities";
-import { parseRow as parseProduct } from "./ProductRepository";
-import { parseRow as parseDriver } from "./DriverRepository";
+import { Order, OrderItem, OrderStatus, CustomerType } from "../../core/entities";
 
 function parseCustomerRow(row: RowDataPacket) {
   return {
@@ -10,6 +8,10 @@ function parseCustomerRow(row: RowDataPacket) {
     name: row.customerName,
     phone: row.customerPhone ?? null,
     address: row.customerAddress ?? null,
+    type: (row.customerType ?? 'customer') as CustomerType,
+    vehiclePlate: row.customerVehiclePlate ?? null,
+    vehicleDetails: row.customerVehicleDetails ?? null,
+    isAvailable: Boolean(row.customerIsAvailable ?? 1),
     totalDebt: parseFloat(row.customerTotalDebt) || 0,
     createdAt: new Date(row.customerCreatedAt),
     updatedAt: new Date(row.customerUpdatedAt),
@@ -20,26 +22,11 @@ function parseOrderRow(row: RowDataPacket): Order {
   return {
     id: row.id,
     orderNumber: row.orderNumber,
-    customerType: row.customerType,
     customerId: row.customerId,
     customer: row.customerName ? parseCustomerRow(row) : undefined,
     totalAmount: parseFloat(row.totalAmount) || 0,
-    totalDelivery: parseFloat(row.totalDelivery) || 0,
+    naulonUncollected: parseFloat(row.naulonUncollected) || 0,
     status: row.status as OrderStatus,
-    driverId: row.driverId ?? null,
-    assignedDriver: row.driverId
-      ? {
-          id: row.driverId,
-          name: row.driverName,
-          phone: row.driverPhone ?? null,
-          vehiclePlate: row.vehiclePlate ?? null,
-          vehicleDetails: row.vehicleDetails ?? null,
-          totalBalance: row.totalBalance ?? null,
-          isAvailable: Boolean(row.driverIsAvailable),
-          createdAt: new Date(row.driverCreatedAt),
-          updatedAt: new Date(row.driverUpdatedAt),
-        }
-      : null,
     items: [],
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),
@@ -71,15 +58,14 @@ function parseItemRow(row: RowDataPacket): OrderItem {
 
 const ORDER_WITH_RELATIONS = `
   SELECT
-    o.id, o.orderNumber, o.customerType, o.customerId, o.totalAmount, o.totalDelivery, o.status, o.driverId,
+    o.id, o.orderNumber, o.customerId, o.totalAmount, o.naulonUncollected, o.status,
     o.createdAt, o.updatedAt,
     c.name AS customerName, c.phone AS customerPhone, c.address AS customerAddress,
-    c.totalDebt AS customerTotalDebt, c.createdAt AS customerCreatedAt, c.updatedAt AS customerUpdatedAt,
-    d.name AS driverName, d.phone AS driverPhone, d.vehiclePlate, d.vehicleDetails,
-    d.isAvailable AS driverIsAvailable, d.createdAt AS driverCreatedAt, d.updatedAt AS driverUpdatedAt
+    c.type AS customerType, c.vehiclePlate AS customerVehiclePlate,
+    c.vehicleDetails AS customerVehicleDetails, c.isAvailable AS customerIsAvailable,
+    c.totalDebt AS customerTotalDebt, c.createdAt AS customerCreatedAt, c.updatedAt AS customerUpdatedAt
   FROM orders o
   LEFT JOIN customers c ON o.customerId = c.id
-  LEFT JOIN drivers d ON o.driverId = d.id
 `;
 
 const ITEMS_WITH_PRODUCT = `
@@ -121,26 +107,16 @@ export class OrderRepository {
   async create(
     data: {
       orderNumber: string;
-      customerType?: "DRIVER" | "COMPANY";
-      customerId?: number | null;
-      driverId?: number | null;
+      customerId: number;
       totalAmount: number;
-      totalDelivery?: number;
+      naulonUncollected: number;
       status: OrderStatus;
     },
     db: Queryable = pool,
   ): Promise<Order> {
     const [result] = await db.query<ResultSetHeader>(
-      "INSERT INTO orders (orderNumber, customerType, customerId, driverId, totalAmount, totalDelivery, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        data.orderNumber,
-        data.customerType || "COMPANY",
-        data.customerId || null,
-        data.driverId || null,
-        data.totalAmount,
-        data.totalDelivery || 0,
-        data.status,
-      ],
+      "INSERT INTO orders (orderNumber, customerId, totalAmount, naulonUncollected, status) VALUES (?, ?, ?, ?, ?)",
+      [data.orderNumber, data.customerId, data.totalAmount, data.naulonUncollected, data.status],
     );
     return (await this.findById(result.insertId, db))!;
   }
@@ -161,11 +137,6 @@ export class OrderRepository {
 
   async updateStatus(id: number, status: OrderStatus, db: Queryable = pool): Promise<void> {
     await db.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
-  }
-
-  async assignDriver(orderId: number, driverId: number, db: Queryable = pool): Promise<Order> {
-    await db.query("UPDATE orders SET driverId = ?, status = ? WHERE id = ?", [driverId, OrderStatus.ASSIGNED, orderId]);
-    return (await this.findById(orderId, db))!;
   }
 
   async findByCustomerId(customerId: number, db: Queryable = pool): Promise<Order[]> {

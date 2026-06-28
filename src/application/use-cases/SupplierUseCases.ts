@@ -3,7 +3,7 @@ import { SupplierRepository } from '../../infrastructure/repositories/SupplierRe
 import { PurchaseRepository } from '../../infrastructure/repositories/PurchaseRepository';
 import { ProductRepository } from '../../infrastructure/repositories/ProductRepository';
 import { Supplier, Purchase, SupplierPayment, SupplierLedger, SupplierLedgerType } from '../../core/entities';
-import { CreateSupplierDto, UpdateSupplierDto, CreatePurchaseDto, AddSupplierPaymentDto } from '../../core/dto';
+import { CreateSupplierDto, UpdateSupplierDto, CreatePurchaseDto, UpdatePurchaseDto, AddSupplierPaymentDto, UpdateSupplierPaymentDto } from '../../core/dto';
 
 const supplierRepo = new SupplierRepository();
 const purchaseRepo = new PurchaseRepository();
@@ -63,7 +63,49 @@ export class SupplierUseCases {
 
       await supplierRepo.updateBalance(data.supplierId, totalAmount, conn);
 
-      return purchase;
+      return (await purchaseRepo.findById(purchase.id, conn))!;
+    });
+  }
+
+  async updatePurchase(id: number, data: UpdatePurchaseDto): Promise<Purchase> {
+    return withTransaction(async (conn) => {
+      const purchase = await purchaseRepo.findById(id, conn);
+      if (!purchase) throw new Error('Purchase not found');
+
+      const oldTotal = purchase.totalAmount;
+      const supplierId = purchase.supplierId;
+
+      // Reverse old stock changes
+      for (const item of purchase.items ?? []) {
+        await productRepo.updateStock(item.productId, -item.quantity, conn);
+      }
+
+      // Remove old items and insert new
+      await purchaseRepo.deletePurchaseItems(id, conn);
+
+      let newTotal = 0;
+      for (const item of data.items) {
+        newTotal += item.quantity * item.price;
+        await purchaseRepo.createItem(
+          { purchaseId: id, productId: item.productId, quantity: item.quantity, price: item.price },
+          conn
+        );
+        await productRepo.updateStock(item.productId, item.quantity, conn);
+      }
+
+      await purchaseRepo.updatePurchaseTotalAmount(id, newTotal, conn);
+
+      // Update ledger entry
+      const ledgerEntry = await purchaseRepo.findLedgerByReference(supplierId, id, SupplierLedgerType.PURCHASE, conn);
+      if (ledgerEntry) {
+        await purchaseRepo.updateLedgerEntry(ledgerEntry.id, newTotal, conn);
+      }
+
+      // Adjust supplier balance by delta
+      const delta = newTotal - oldTotal;
+      await supplierRepo.updateBalance(supplierId, delta, conn);
+
+      return (await purchaseRepo.findById(id, conn))!;
     });
   }
 
@@ -85,12 +127,40 @@ export class SupplierUseCases {
     });
   }
 
+  async updatePayment(id: number, data: UpdateSupplierPaymentDto): Promise<SupplierPayment> {
+    return withTransaction(async (conn) => {
+      const payment = await purchaseRepo.findSupplierPaymentById(id, conn);
+      if (!payment) throw new Error('Supplier payment not found');
+
+      const oldAmount = payment.amount;
+      const newAmount = data.amount;
+
+      await purchaseRepo.updateSupplierPayment(id, data, conn);
+
+      // Update ledger entry
+      const ledgerEntry = await purchaseRepo.findLedgerByReference(payment.supplierId, id, SupplierLedgerType.PAYMENT, conn);
+      if (ledgerEntry) {
+        await purchaseRepo.updateLedgerEntry(ledgerEntry.id, newAmount, conn);
+      }
+
+      // Adjust supplier balance: reverse old payment effect, apply new
+      const delta = oldAmount - newAmount; // was: balance -= old; now: balance -= new → net: balance += (old - new)
+      await supplierRepo.updateBalance(payment.supplierId, delta, conn);
+
+      return (await purchaseRepo.findSupplierPaymentById(id, conn))!;
+    });
+  }
+
   async getLedger(supplierId: number, filters: { type?: string; startDate?: string; endDate?: string } = {}): Promise<SupplierLedger[]> {
     return purchaseRepo.getLedger(supplierId, filters);
   }
 
   async getAllPayments(): Promise<SupplierPayment[]> {
     return purchaseRepo.findAllSupplierPayments();
+  }
+
+  async getSupplierPaymentById(id: number): Promise<SupplierPayment | null> {
+    return purchaseRepo.findSupplierPaymentById(id);
   }
 
   async getPurchaseById(id: number): Promise<Purchase | null> {

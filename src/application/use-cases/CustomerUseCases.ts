@@ -1,5 +1,5 @@
 import { CustomerRepository } from '../../infrastructure/repositories/CustomerRepository';
-import { Customer } from '../../core/entities';
+import { Customer, CustomerType } from '../../core/entities';
 import { CreateCustomerDto, UpdateCustomerDto } from '../../core/dto';
 
 const repo = new CustomerRepository();
@@ -7,6 +7,10 @@ const repo = new CustomerRepository();
 export class CustomerUseCases {
   async getAllCustomers(): Promise<Customer[]> {
     return repo.findAll();
+  }
+
+  async getCustomersByType(type: CustomerType): Promise<Customer[]> {
+    return repo.findAllByType(type);
   }
 
   async getCustomerById(id: number): Promise<Customer | null> {
@@ -30,7 +34,7 @@ export class CustomerUseCases {
       await repo.delete(id);
     } catch (err: any) {
       if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-        throw new Error('لا يمكن حذف هذا العميل لأن له طلبات أو مدفوعات مرتبطة');
+        throw new Error('لا يمكن حذف هذا السجل لأن له طلبات أو مدفوعات مرتبطة');
       }
       throw err;
     }

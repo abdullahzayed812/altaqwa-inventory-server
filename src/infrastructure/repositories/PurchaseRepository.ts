@@ -207,4 +207,53 @@ export class PurchaseRepository {
     `);
     return rows.map(parseSupplierPaymentRow);
   }
+
+  async findSupplierPaymentById(id: number, db: Queryable = pool): Promise<SupplierPayment | null> {
+    const [rows] = await db.query<RowDataPacket[]>('SELECT * FROM supplier_payments WHERE id = ?', [id]);
+    return rows.length > 0 ? parseSupplierPaymentRow(rows[0]) : null;
+  }
+
+  async updateSupplierPayment(
+    id: number,
+    data: { amount: number; method?: string; senderName?: string | null; note?: string | null },
+    db: Queryable = pool
+  ): Promise<SupplierPayment> {
+    const fields: string[] = ['amount = ?'];
+    const values: any[] = [data.amount];
+    if (data.method !== undefined) { fields.push('method = ?'); values.push(data.method); }
+    if (data.senderName !== undefined) { fields.push('senderName = ?'); values.push(data.senderName); }
+    if (data.note !== undefined) { fields.push('note = ?'); values.push(data.note); }
+    values.push(id);
+    await db.query(`UPDATE supplier_payments SET ${fields.join(', ')} WHERE id = ?`, values);
+    return (await this.findSupplierPaymentById(id, db))!;
+  }
+
+  async updateLedgerEntry(
+    id: number,
+    amount: number,
+    db: Queryable = pool
+  ): Promise<void> {
+    await db.query('UPDATE supplier_ledger SET amount = ? WHERE id = ?', [amount, id]);
+  }
+
+  async findLedgerByReference(
+    supplierId: number,
+    referenceId: number,
+    type: SupplierLedgerType,
+    db: Queryable = pool
+  ): Promise<SupplierLedger | null> {
+    const [rows] = await db.query<RowDataPacket[]>(
+      'SELECT * FROM supplier_ledger WHERE supplierId = ? AND referenceId = ? AND type = ?',
+      [supplierId, referenceId, type]
+    );
+    return rows.length > 0 ? parseLedgerRow(rows[0]) : null;
+  }
+
+  async deletePurchaseItems(purchaseId: number, db: Queryable = pool): Promise<void> {
+    await db.query('DELETE FROM purchase_items WHERE purchaseId = ?', [purchaseId]);
+  }
+
+  async updatePurchaseTotalAmount(id: number, totalAmount: number, db: Queryable = pool): Promise<void> {
+    await db.query('UPDATE purchases SET totalAmount = ? WHERE id = ?', [totalAmount, id]);
+  }
 }

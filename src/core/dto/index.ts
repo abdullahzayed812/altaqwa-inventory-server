@@ -34,15 +34,15 @@ export interface UpdateSupplierDto {
 
 export interface CreateProductDto {
   name: string;
-  price: number;
-  stock: number;
+  price?: number | null;
+  stock?: number | null;
   imagePath?: string;
 }
 
 export interface UpdateProductDto {
   name?: string;
-  price?: number;
-  stock?: number;
+  price?: number | null;
+  stock?: number | null;
   imagePath?: string;
 }
 

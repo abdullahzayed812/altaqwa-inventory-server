@@ -7,8 +7,8 @@ export function parseRow(row: RowDataPacket): Product {
   return {
     id: row.id,
     name: row.name,
-    price: parseFloat(row.price) || 0,
-    stock: parseInt(row.stock) || 0,
+    price: row.price !== null && row.price !== undefined ? parseFloat(row.price) : null,
+    stock: row.stock !== null && row.stock !== undefined ? parseInt(row.stock) : null,
     imagePath: row.imagePath ?? null,
     createdAt: new Date(row.createdAt),
     updatedAt: new Date(row.updatedAt),

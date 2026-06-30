@@ -46,8 +46,8 @@ export interface Supplier {
 export interface Product {
   id: number;
   name: string;
-  price: number;
-  stock: number;
+  price: number | null;
+  stock: number | null;
   imagePath: string | null;
   createdAt: Date;
   updatedAt: Date;

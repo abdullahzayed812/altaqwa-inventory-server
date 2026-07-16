@@ -17,6 +17,7 @@ export enum SupplierLedgerType {
 export enum CustomerType {
   CUSTOMER = 'customer',
   DRIVER = 'driver',
+  FINANCIAL = 'financial',
 }
 
 export interface Customer {

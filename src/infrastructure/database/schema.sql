@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS customers (
   name VARCHAR(255) NOT NULL,
   phone VARCHAR(50),
   address TEXT,
-  type ENUM('customer','driver') NOT NULL DEFAULT 'customer',
+  type ENUM('customer','driver','financial') NOT NULL DEFAULT 'customer',
   vehiclePlate VARCHAR(100),
   vehicleDetails VARCHAR(100),
   isAvailable TINYINT(1) NOT NULL DEFAULT 1,

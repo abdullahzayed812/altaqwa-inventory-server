@@ -12,7 +12,7 @@ export class CustomerController {
   async getAll(req: Request, res: Response) {
     try {
       const { type } = req.query as { type?: string };
-      if (type === 'customer' || type === 'driver') {
+      if (type === 'customer' || type === 'driver' || type === 'financial') {
         res.json(await uc.getCustomersByType(type as CustomerType));
       } else {
         res.json(await uc.getAllCustomers());

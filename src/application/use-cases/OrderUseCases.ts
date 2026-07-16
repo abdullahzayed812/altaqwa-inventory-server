@@ -2,7 +2,7 @@ import { withTransaction } from '../../infrastructure/database/connection';
 import { OrderRepository } from '../../infrastructure/repositories/OrderRepository';
 import { ProductRepository } from '../../infrastructure/repositories/ProductRepository';
 import { CustomerRepository } from '../../infrastructure/repositories/CustomerRepository';
-import { Order, OrderStatus } from '../../core/entities';
+import { Order, OrderStatus, CustomerType } from '../../core/entities';
 import { CreateOrderDto } from '../../core/dto';
 
 const orderRepo = new OrderRepository();
@@ -22,6 +22,9 @@ export class OrderUseCases {
     return withTransaction(async (conn) => {
       const customer = await customerRepo.findById(data.customerId, conn);
       if (!customer) throw new Error('Customer not found');
+      if (customer.type === CustomerType.FINANCIAL) {
+        throw new Error('لا يمكن إنشاء طلب لحساب مالي');
+      }
 
       const orderNumber = `ORD-${Date.now().toString().slice(-4)}`;
       const naulon = data.naulonUncollected ?? 0;

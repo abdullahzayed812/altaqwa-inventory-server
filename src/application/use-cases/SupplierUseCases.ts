@@ -31,14 +31,7 @@ export class SupplierUseCases {
   async deleteSupplier(id: number): Promise<void> {
     const supplier = await supplierRepo.findById(id);
     if (!supplier) throw new Error('Supplier not found');
-    try {
-      await supplierRepo.delete(id);
-    } catch (err: any) {
-      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-        throw new Error('لا يمكن حذف هذا المورد لأن له مشتريات أو مدفوعات مرتبطة');
-      }
-      throw err;
-    }
+    await supplierRepo.delete(id);
   }
 
   async createPurchase(data: CreatePurchaseDto): Promise<Purchase> {

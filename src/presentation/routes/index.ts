@@ -35,6 +35,8 @@ router.patch('/products/:id/stock', (req, res) => inventory.updateStock(req, res
 router.get('/orders', (req, res) => orders.getAll(req, res));
 router.post('/orders', (req, res) => orders.create(req, res));
 router.patch('/orders/:id/status', (req, res) => orders.updateStatus(req, res));
+router.put('/orders/:id', (req, res) => orders.update(req, res));
+router.delete('/orders/:id', (req, res) => orders.delete(req, res));
 
 // Payments (customer payments)
 router.get('/payments', (req, res) => payments.getAll(req, res));

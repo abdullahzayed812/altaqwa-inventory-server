@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS orders (
   status ENUM('PENDING','DELIVERED','CANCELLED') NOT NULL DEFAULT 'PENDING',
   createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (customerId) REFERENCES customers(id)
+  FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS order_items (
@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   price DECIMAL(12,2) NOT NULL,
   deliveryFeePerTon DECIMAL(12,2) NOT NULL DEFAULT 0,
   totalDelivery DECIMAL(12,2) NOT NULL DEFAULT 0,
-  FOREIGN KEY (orderId) REFERENCES orders(id),
+  FOREIGN KEY (orderId) REFERENCES orders(id) ON DELETE CASCADE,
   FOREIGN KEY (productId) REFERENCES products(id)
 ) ENGINE=InnoDB;
 
@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS payments (
   senderName VARCHAR(255),
   notes VARCHAR(255),
   createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (customerId) REFERENCES customers(id)
+  FOREIGN KEY (customerId) REFERENCES customers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS purchases (
@@ -78,7 +78,7 @@ CREATE TABLE IF NOT EXISTS purchases (
   supplierId INT NOT NULL,
   totalAmount DECIMAL(12,2) NOT NULL,
   createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (supplierId) REFERENCES suppliers(id)
+  FOREIGN KEY (supplierId) REFERENCES suppliers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS purchase_items (
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS purchase_items (
   productId INT NOT NULL,
   quantity INT NOT NULL,
   price DECIMAL(12,2) NOT NULL,
-  FOREIGN KEY (purchaseId) REFERENCES purchases(id),
+  FOREIGN KEY (purchaseId) REFERENCES purchases(id) ON DELETE CASCADE,
   FOREIGN KEY (productId) REFERENCES products(id)
 ) ENGINE=InnoDB;
 
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
   senderName VARCHAR(255),
   note TEXT,
   createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (supplierId) REFERENCES suppliers(id)
+  FOREIGN KEY (supplierId) REFERENCES suppliers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS supplier_ledger (
@@ -109,6 +109,6 @@ CREATE TABLE IF NOT EXISTS supplier_ledger (
   amount DECIMAL(12,2) NOT NULL,
   referenceId INT,
   createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (supplierId) REFERENCES suppliers(id)
+  FOREIGN KEY (supplierId) REFERENCES suppliers(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 

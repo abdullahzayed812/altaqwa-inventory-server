@@ -61,6 +61,13 @@ export interface CreateOrderDto {
   items: OrderItemDto[];
 }
 
+export interface UpdateOrderDto {
+  customerId: number;
+  totalAmount: number;
+  naulonUncollected?: number;
+  items: OrderItemDto[];
+}
+
 export interface PurchaseItemDto {
   productId: number;
   quantity: number;

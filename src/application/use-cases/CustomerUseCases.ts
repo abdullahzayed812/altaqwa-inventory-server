@@ -30,14 +30,7 @@ export class CustomerUseCases {
   async deleteCustomer(id: number): Promise<void> {
     const customer = await repo.findById(id);
     if (!customer) throw new Error('Customer not found');
-    try {
-      await repo.delete(id);
-    } catch (err: any) {
-      if (err.code === 'ER_ROW_IS_REFERENCED_2') {
-        throw new Error('لا يمكن حذف هذا السجل لأن له طلبات أو مدفوعات مرتبطة');
-      }
-      throw err;
-    }
+    await repo.delete(id);
   }
 
   async updateDebt(id: number, amount: number): Promise<void> {

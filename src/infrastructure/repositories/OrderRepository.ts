@@ -139,6 +139,27 @@ export class OrderRepository {
     await db.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
   }
 
+  async update(
+    id: number,
+    data: { customerId: number; totalAmount: number; naulonUncollected: number },
+    db: Queryable = pool,
+  ): Promise<void> {
+    await db.query("UPDATE orders SET customerId = ?, totalAmount = ?, naulonUncollected = ? WHERE id = ?", [
+      data.customerId,
+      data.totalAmount,
+      data.naulonUncollected,
+      id,
+    ]);
+  }
+
+  async deleteItems(orderId: number, db: Queryable = pool): Promise<void> {
+    await db.query("DELETE FROM order_items WHERE orderId = ?", [orderId]);
+  }
+
+  async delete(id: number, db: Queryable = pool): Promise<void> {
+    await db.query("DELETE FROM orders WHERE id = ?", [id]);
+  }
+
   async findByCustomerId(customerId: number, db: Queryable = pool): Promise<Order[]> {
     const [rows] = await db.query<RowDataPacket[]>(`${ORDER_WITH_RELATIONS} WHERE o.customerId = ? ORDER BY o.createdAt DESC`, [customerId]);
     return attachItems(rows.map(parseOrderRow), db);

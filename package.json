@@ -10,7 +10,8 @@
     "db:init": "ts-node src/infrastructure/database/init.ts",
     "db:seed": "ts-node src/infrastructure/database/seed.ts",
     "db:reset": "ts-node src/infrastructure/database/reset.ts",
-    "db:reset:seed": "ts-node src/infrastructure/database/reset.ts && ts-node src/infrastructure/database/seed.ts"
+    "db:reset:seed": "ts-node src/infrastructure/database/reset.ts && ts-node src/infrastructure/database/seed.ts",
+    "db:migrate": "ts-node src/infrastructure/database/migrate.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
